@@ -98,7 +98,7 @@
             .projection(projection);
 
         queue()
-            .defer(d3.json, '../geojsons/states-20m.json')
+            .defer(d3.json, 'geojsons/states-20m.json')
             .await(makeMap);
 
         function makeMap(error, states) {
