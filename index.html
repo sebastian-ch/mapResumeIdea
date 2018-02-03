@@ -1,0 +1,243 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Map Resume</title>
+
+    <link href="http://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" type="text/css">
+
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            background: whitesmoke;
+            font-family: Montserrat, sans-serif;
+        }
+
+        .states {
+            stroke: darkgray;
+            stroke-width: 1.4;
+            fill-opacity: 0;
+        }
+
+        .hover {
+            fill: yellow;
+        }
+
+        h1 {
+            width: 80%;
+            margin: 10px auto 10px auto;
+            left: 20px;
+            top: 10px;
+            text-align: center;
+            font-size: 2em;
+            font-weight: 100;
+            color: #005DAA;
+        }
+
+        .annotation-note-title,
+        text.title {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .annotation-note-label {
+            font-size: 11px;
+        }
+
+        #map {
+            width: 80%;
+            margin: 10px auto;
+            /* border: 1px solid #d3d3d3; */
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Sebastian Hancock</h1>
+
+    <div id="map"></div>
+
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.19/topojson.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.1.0/d3-annotation.min.js"></script>
+    <script>
+        //var wmPoint = [572, 260];
+        var wmPoint = [-76.707565, 37.270901],
+            femaPoint = [-77.138190, 38.80419],
+            pbPoint = [-72.289348, 43.702384],
+            currentPoint = [-157.82119, 21.27238];
+
+        d3.select(window).on('resize', resize);
+
+        var margin = {
+                top: 10,
+                left: 10,
+                bottom: 10,
+                right: 10
+            },
+
+            width = parseInt(d3.select('#map').style('width')),
+            width = width - margin.left - margin.right,
+            mapRatio = .7,
+            height = width * mapRatio;
+
+        var svg = d3.select("#map")
+
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        var projection = d3.geoAlbersUsa()
+            .scale(width)
+            .translate([width / 2, height / 2]);
+
+        var geoPath = d3.geoPath()
+            .projection(projection);
+
+        queue()
+            .defer(d3.json, '/geojsons/states-20m.json')
+            .await(makeMap);
+
+        function makeMap(error, states) {
+
+            svg.append("g")
+                .selectAll("path")
+                .data(states.features)
+                .enter()
+                .append("path")
+                .attr("d", geoPath)
+                .attr("class", "states");
+
+            createAnnotations();
+        }
+
+        function createAnnotations() {
+
+            d3.selectAll('.annotation-group').remove();
+
+            var annotations = [{
+                    note: {
+                        label: "2009-2013, B.S. Geology",
+                        title: "College of William & Mary"
+                    },
+                    connector: {
+                        end: "dot",
+                        type: "curve"
+                    },
+                    x: projection(wmPoint)[0],
+                    y: projection(wmPoint)[1],
+                    dy: 70,
+                    dx: 100
+                },
+                {
+                    note: {
+                        label: "FEMA/Michael Baker, 2013-2014",
+                        title: "FEMA Map Specialist",
+                        align: "left",
+                        wrap: 100
+                    },
+                    connector: {
+                        end: "dot",
+                        type: "curve"
+                    },
+                    x: projection(femaPoint)[0],
+                    y: projection(femaPoint)[1],
+                    dy: -10,
+                    dx: 90
+                }, {
+                    note: {
+                        label: "Pitney Bowes, 2015-2017",
+                        title: "Spatial Data Analyst"
+                    },
+                    connector: {
+                        end: "dot",
+                        type: "curve",
+                    },
+                    x: projection(pbPoint)[0],
+                    y: projection(pbPoint)[1],
+                    dy: -30,
+                    dx: -65
+                }, {
+                    type: d3.annotationCalloutElbow,
+                    note: {
+                        label: "Traveling the World",
+                        title: "Currently Here",
+
+                    },
+                    connector: {
+                        end: "dot",
+                    },
+                    x: projection(currentPoint)[0],
+                    y: projection(currentPoint)[1],
+                    dy: 80,
+                    dx: 10
+                }
+            ];
+
+            var makeAnnotations = d3.annotation()
+                .type(d3.annotationLabel)
+                .annotations(annotations)
+
+
+            d3.select("svg")
+                .append("g")
+                .attr("class", "annotation-group")
+                .call(makeAnnotations)
+        }
+
+
+        //update size on window resize
+        function resize() {
+
+            width = parseInt(d3.select('#map').style('width'));
+            width = width - margin.left - margin.right;
+            height = width * mapRatio;
+
+            // update projection
+            projection
+                .translate([width / 2, height / 2])
+                .scale(width);
+
+            // resize the map container
+            svg
+                .style('width', width + 'px')
+                .style('height', height + 'px');
+
+            createAnnotations();
+
+            // resize the data
+            svg.selectAll('.states').attr('d', geoPath);
+
+        }
+
+
+
+        ///////old stuff
+
+        /*  var startingPoints = {
+                     wmStart: {
+                         x: 572,
+                         y: 260
+                     }, 
+                  femaStart: {
+                      x: 569,
+                      y: 244,
+                  },
+
+                  pbStart: {
+                      x: 599,
+                      y: 160,
+                  },
+
+                  currentStart: {
+                      x: 247,
+                      y: 402,
+                  }
+              }; */
+    </script>
+</body>
+
+</html>
